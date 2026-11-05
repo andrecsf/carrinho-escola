@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carrinho de Notebooks</title>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header><div class="in">
+  <h1>Carrinho de Notebooks</h1>
+  <div class="cfg">
+    <label style="flex-direction:row;align-items:center;gap:6px;font-weight:400;min-width:0;flex:none">
+      <input type="checkbox" id="demo"> Modo demo</label>
+    <input type="text" id="base" value="http://localhost:3000" aria-label="URL da API">
+  </div>
+</div></header>
+<div id="aviso" class="demo hide">Modo demo: os dados ficam só neste navegador. Desmarque para usar a API.</div>
+
+<main>
+<nav role="tablist" id="tabs">
+  <button role="tab" data-t="equip" aria-selected="true">Equipamentos</button>
+  <button role="tab" data-t="emp">Emprestar</button>
+  <button role="tab" data-t="dev">Devolver</button>
+  <button role="tab" data-t="atr">Atrasados</button>
+  <button role="tab" data-t="hist">Histórico</button>
+</nav>
+
+<section id="equip">
+  <div class="sum" id="sum"></div>
+  <div class="card" style="margin-bottom:14px">
+    <h2>Cadastrar equipamento</h2>
+    <div class="row">
+      <label>Patrimônio<input id="c-pat" placeholder="Ex.: NB-001"></label>
+      <label>Tipo<select id="c-tipo"><option value="notebook">Notebook</option><option value="projetor">Projetor</option><option value="camera">Câmera</option></select></label>
+      <button class="pri" id="c-btn">Cadastrar</button>
+    </div>
+  </div>
+  <div class="card"><h2>Equipamentos</h2><div class="wrap" id="lista"></div></div>
+</section>
+
+<section id="emp" class="hide">
+  <div class="card">
+    <h2>Registrar empréstimo</h2>
+    <div class="row">
+      <label>Equipamento disponível<select id="e-pat"></select></label>
+      <label>Responsável<input id="e-resp"></label>
+      <label>Setor<input id="e-setor" placeholder="Ex.: 1º ano A"></label>
+      <label>Devolução prevista<input type="date" id="e-prev"></label>
+      <button class="pri" id="e-btn">Emprestar</button>
+    </div>
+    <p style="color:var(--mute);font-size:.9rem;margin:10px 0 0">A previsão deve ser futura e de até 7 dias.</p>
+  </div>
+</section>
+
+<section id="dev" class="hide">
+  <div class="card">
+    <h2>Registrar devolução</h2>
+    <div class="row">
+      <label>Equipamento emprestado<select id="d-pat"></select></label>
+      <label>Condição<select id="d-cond"><option value="ok">Sem problemas</option><option value="avariado">Avariado</option></select></label>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label id="d-obs-w" class="hide">Observação (obrigatória se avariado)<textarea id="d-obs" rows="2"></textarea></label>
+      <button class="pri" id="d-btn">Devolver</button>
+    </div>
+  </div>
+</section>
+
+<section id="atr" class="hide"><div class="card"><h2>Empréstimos atrasados</h2><div class="wrap" id="l-atr"></div></div></section>
+<section id="hist" class="hide"><div class="card"><h2>Histórico</h2><div class="wrap" id="l-hist"></div></div></section>
+</main>
+<div id="toast" role="status"></div>
+
+<script src="js/config.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>

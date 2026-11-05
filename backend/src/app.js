@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const pool = require('./db/pool');
 const { createEmprestimosService } = require('./services/emprestimos');
@@ -19,6 +20,9 @@ app.get('/health', async (req, res) => {
 
 app.use('/api/emprestimos', createEmprestimosRouter(createEmprestimosService(pool)));
 app.use('/api', equipamentosRouter);
+
+// Serve o front-end (pasta /frontend) na mesma origem da API.
+app.use(express.static(path.join(__dirname, '../../frontend')));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
