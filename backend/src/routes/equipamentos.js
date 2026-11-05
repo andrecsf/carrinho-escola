@@ -130,7 +130,7 @@ router.get('/emprestimos/atrasados', async (req, res) => {
        FROM emprestimos emp
        JOIN equipamentos e ON emp.equipamento_id = e.id
        WHERE emp.devolvido_em IS NULL 
-         AND emp.previsto_para < CURRENT_DATE
+         AND emp.previsto_para < CURRENT_TIMESTAMP
        ORDER BY emp.previsto_para ASC`
     );
 
