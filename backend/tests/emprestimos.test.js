@@ -32,18 +32,17 @@ function createFakePool(equipamentos) {
           return { rowCount: 1, rows: [{ id: e.id }] };
         }
         if (q.startsWith('INSERT INTO emprestimos')) {
-          const row = { id: state.nextId++, equipamento_id: params[0], pessoa: params[1],
-            data_emprestimo: new Date(), previsao_devolucao: params[2], situacao: 'ativo' };
+          const row = { id: state.nextId++, equipamento_id: params[0], responsavel: params[1],
+            setor: params[2], retirada_em: new Date(), previsto_para: params[3], devolvido_em: null };
           state.emprestimos.push(row);
           undo.push(() => { state.emprestimos.splice(state.emprestimos.indexOf(row), 1); });
           return { rowCount: 1, rows: [row] };
         }
-        if (q.startsWith("UPDATE emprestimos SET situacao = 'finalizado'")) {
-          const e = state.emprestimos.find((x) => x.id === params[0] && x.situacao === 'ativo');
+        if (q.startsWith('UPDATE emprestimos SET devolvido_em')) {
+          const e = state.emprestimos.find((x) => x.id === params[0] && x.devolvido_em === null);
           if (!e) return { rowCount: 0, rows: [] };
           const antes = { ...e };
-          Object.assign(e, { situacao: 'finalizado', data_devolucao: new Date(),
-            condicao_devolucao: params[1], observacao_avaria: params[2] });
+          Object.assign(e, { devolvido_em: new Date(), condicao: params[1], observacao: params[2] });
           undo.push(() => { Object.keys(e).forEach((k) => delete e[k]); Object.assign(e, antes); });
           return { rowCount: 1, rows: [{ equipamento_id: e.equipamento_id }] };
         }
@@ -85,15 +84,15 @@ afterEach(() => new Promise((r) => server.close(r)));
 const post = (body) => fetch(base, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 const patch = (id, body) => fetch(`${base}/${id}/devolver`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 const eq = (id) => pool.state.equipamentos.find((e) => e.id === id);
-const ok = { patrimonio: 'PAT-001', pessoa: 'Maria Silva', previsaoDevolucao: '2026-11-10' };
+const ok = { patrimonio: 'PAT-001', responsavel: 'Maria Silva', setor: 'Biblioteca', previsaoDevolucao: '2026-11-10' };
 
 // ---------- RF2 ----------
 test('RF2: empréstimo de equipamento disponível', async () => {
   const res = await post(ok);
   assert.strictEqual(res.status, 201);
   const body = await res.json();
-  assert.strictEqual(body.situacao, 'ativo');
-  assert.strictEqual(body.previsaoDevolucao, '2026-11-10');
+  assert.strictEqual(body.responsavel, 'Maria Silva');
+  assert.strictEqual(body.setor, 'Biblioteca');
   assert.strictEqual(eq(1).estado, 'emprestado');
   assert.strictEqual(pool.state.emprestimos.length, 1);
 });
@@ -134,12 +133,14 @@ test('RF2: empréstimo dentro do prazo (limite de 7 dias) -> 201', async () => {
 test('RF2: data inválida ou campos ausentes -> 400', async () => {
   assert.strictEqual((await post({ ...ok, previsaoDevolucao: '2026-02-30' })).status, 400);
   assert.strictEqual((await post({ ...ok, previsaoDevolucao: undefined })).status, 400);
-  assert.strictEqual((await post({ ...ok, pessoa: '  ' })).status, 400);
+  assert.strictEqual((await post({ ...ok, responsavel: '  ' })).status, 400);
+  assert.strictEqual((await post({ ...ok, setor: '' })).status, 400);
+  assert.strictEqual((await post({ ...ok, setor: undefined })).status, 400);
   assert.strictEqual((await post({ ...ok, patrimonio: '' })).status, 400);
 });
 
 test('RF2: dois empréstimos simultâneos do mesmo equipamento -> só um vence', async () => {
-  const [a, b] = await Promise.all([post(ok), post({ ...ok, pessoa: 'João' })]);
+  const [a, b] = await Promise.all([post(ok), post({ ...ok, responsavel: 'João' })]);
   const status = [a.status, b.status].sort();
   assert.deepStrictEqual(status, [201, 409]);
   assert.strictEqual(pool.state.emprestimos.length, 1);
@@ -163,8 +164,8 @@ test('RF3: devolução em boas condições', async () => {
   assert.strictEqual(res.status, 200);
   assert.strictEqual(eq(1).estado, 'disponivel');
   const e = pool.state.emprestimos[0];
-  assert.strictEqual(e.situacao, 'finalizado');
-  assert.ok(e.data_devolucao);
+  assert.ok(e.devolvido_em);
+  assert.strictEqual(e.condicao, 'ok');
 });
 
 test('RF3: devolução avariado -> manutenção com observação', async () => {
@@ -172,7 +173,7 @@ test('RF3: devolução avariado -> manutenção com observação', async () => {
   const res = await patch(id, { condicao: 'avariado', observacao: '  Cabo danificado.  ' });
   assert.strictEqual(res.status, 200);
   assert.strictEqual(eq(1).estado, 'manutencao');
-  assert.strictEqual(pool.state.emprestimos[0].observacao_avaria, 'Cabo danificado.');
+  assert.strictEqual(pool.state.emprestimos[0].observacao, 'Cabo danificado.');
 });
 
 test('RF3: avariado sem observação (vazia ou só espaços) -> 400 e nada muda', async () => {
@@ -180,7 +181,7 @@ test('RF3: avariado sem observação (vazia ou só espaços) -> 400 e nada muda'
   assert.strictEqual((await patch(id, { condicao: 'avariado' })).status, 400);
   assert.strictEqual((await patch(id, { condicao: 'avariado', observacao: '   ' })).status, 400);
   assert.strictEqual(eq(1).estado, 'emprestado');
-  assert.strictEqual(pool.state.emprestimos[0].situacao, 'ativo');
+  assert.strictEqual(pool.state.emprestimos[0].devolvido_em, null);
 });
 
 test('RF3: condição inválida -> 400', async () => {
@@ -213,7 +214,7 @@ test('RF3: falha durante a devolução faz rollback do empréstimo', async () =>
   pool.state.failOn = 'UPDATE equipamentos SET estado = $2';
   const res = await patch(id, { condicao: 'ok' });
   assert.strictEqual(res.status, 500);
-  assert.strictEqual(pool.state.emprestimos[0].situacao, 'ativo');
-  assert.strictEqual(pool.state.emprestimos[0].data_devolucao, undefined);
+  assert.strictEqual(pool.state.emprestimos[0].devolvido_em, null);
+  assert.strictEqual(pool.state.emprestimos[0].devolvido_em, null);
   assert.strictEqual(eq(1).estado, 'emprestado');
 });

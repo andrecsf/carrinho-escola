@@ -29,13 +29,16 @@ function diasEntre(hojeStr, previsaoStr) {
 }
 
 function createEmprestimosService(pool, { agora = () => new Date() } = {}) {
-  async function emprestar({ patrimonio, pessoa, previsaoDevolucao } = {}) {
+  async function emprestar({ patrimonio, responsavel, setor, previsaoDevolucao } = {}) {
     // --- validações de entrada (antes de abrir transação) ---
     if (typeof patrimonio !== 'string' || !patrimonio.trim()) {
       throw new AppError(400, 'Patrimônio é obrigatório.');
     }
-    if (typeof pessoa !== 'string' || !pessoa.trim() || pessoa.trim().length > 120) {
-      throw new AppError(400, 'Pessoa é obrigatória (até 120 caracteres).');
+    if (typeof responsavel !== 'string' || !responsavel.trim() || responsavel.trim().length > 100) {
+      throw new AppError(400, 'Responsável é obrigatório (até 100 caracteres).');
+    }
+    if (typeof setor !== 'string' || !setor.trim() || setor.trim().length > 100) {
+      throw new AppError(400, 'Setor é obrigatório (até 100 caracteres).');
     }
     if (parseData(previsaoDevolucao) === null) {
       throw new AppError(400, 'Previsão de devolução inválida. Use o formato AAAA-MM-DD.');
@@ -69,12 +72,12 @@ function createEmprestimosService(pool, { agora = () => new Date() } = {}) {
         throw new AppError(409, 'Equipamento indisponível para empréstimo.');
       }
 
+      // A previsão chega como data (AAAA-MM-DD) e vale até o fim desse dia.
       const ins = await client.query(
-        `INSERT INTO emprestimos (equipamento_id, pessoa, previsao_devolucao)
-         VALUES ($1, $2, $3)
-         RETURNING id, equipamento_id, pessoa, data_emprestimo,
-                   to_char(previsao_devolucao, 'YYYY-MM-DD') AS previsao_devolucao, situacao`,
-        [equipamentoId, pessoa.trim(), previsaoDevolucao]
+        `INSERT INTO emprestimos (equipamento_id, responsavel, setor, previsto_para)
+         VALUES ($1, $2, $3, $4::date + TIME '23:59:59')
+         RETURNING id, equipamento_id, responsavel, setor, retirada_em, previsto_para`,
+        [equipamentoId, responsavel.trim(), setor.trim(), previsaoDevolucao]
       );
 
       await client.query('COMMIT');
@@ -82,10 +85,10 @@ function createEmprestimosService(pool, { agora = () => new Date() } = {}) {
       return {
         id: r.id,
         patrimonio: patrimonio.trim(),
-        pessoa: r.pessoa,
-        dataEmprestimo: r.data_emprestimo,
-        previsaoDevolucao: r.previsao_devolucao,
-        situacao: r.situacao,
+        responsavel: r.responsavel,
+        setor: r.setor,
+        retiradaEm: r.retirada_em,
+        previstoPara: r.previsto_para,
       };
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
@@ -116,9 +119,8 @@ function createEmprestimosService(pool, { agora = () => new Date() } = {}) {
       // Finaliza o empréstimo só se ainda estiver ativo (impede devolução dupla).
       const fin = await client.query(
         `UPDATE emprestimos
-            SET situacao = 'finalizado', data_devolucao = now(),
-                condicao_devolucao = $2, observacao_avaria = $3
-          WHERE id = $1 AND situacao = 'ativo'
+            SET devolvido_em = CURRENT_TIMESTAMP, condicao = $2, observacao = $3
+          WHERE id = $1 AND devolvido_em IS NULL
           RETURNING equipamento_id`,
         [id, condicao, condicao === 'avariado' ? obs : null]
       );
@@ -139,7 +141,7 @@ function createEmprestimosService(pool, { agora = () => new Date() } = {}) {
       }
 
       await client.query('COMMIT');
-      return { id, situacao: 'finalizado', condicao, equipamentoEstado: novoEstado };
+      return { id, condicao, equipamentoEstado: novoEstado };
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
       throw err;
