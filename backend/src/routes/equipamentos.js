@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('./db/pool'); // Ajuste o caminho se necessário
+const pool = require('../db/pool'); // Ajuste o caminho se necessário
 
 // ==========================================
 // RF1: Cadastrar Equipamento (#4)
