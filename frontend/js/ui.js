@@ -30,7 +30,7 @@ async function atualizar(){
   $('#lista').innerHTML = tabela(['Patrimônio','Tipo','Estado','Com quem','Devolução prevista',''],
     eqs.map(e => `<tr><td>${esc(e.patrimonio)}</td><td>${NOMES[e.tipo]||esc(e.tipo)}</td><td>${tag(e.estado)}</td>
       <td>${e.responsavel ? esc(e.responsavel)+' ('+esc(e.setor)+')' : '—'}</td><td>${fmt(e.previsto_para)}</td>
-      <td>${e.estado==='manutencao' ? `<button class="sec" data-lib="${esc(e.patrimonio)}">Liberar</button>` : ''}</td></tr>`),
+      <td>${e.estado==='manutencao' ? `<button class="sec" data-lib="${esc(e.patrimonio)}">Liberar</button> ` : ''}${e.estado!=='emprestado' ? `<button class="sec" data-del="${esc(e.patrimonio)}">Excluir</button>` : ''}</td></tr>`),
     'Nenhum equipamento cadastrado. Use o formulário acima.');
 
   const opts = (lista, vazio) => lista.length ? lista.map(e => `<option value="${esc(e.patrimonio)}">${esc(e.patrimonio)} — ${NOMES[e.tipo]||esc(e.tipo)}</option>`).join('')
@@ -82,6 +82,8 @@ $('#d-btn').onclick = () => {
 };
 $('#lista').addEventListener('click', ev => {
   const p = ev.target.dataset.lib; if(p) acao(() => api.liberar(p), 'Equipamento liberado');
+  const d = ev.target.dataset.del;
+  if(d && confirm(`Excluir o equipamento ${d}? Essa ação não pode ser desfeita.`)) acao(() => api.excluir(d), 'Equipamento excluído');
 });
 function modo(){ $('#aviso').classList.toggle('hide', !emDemo()); baseEl.disabled = emDemo(); atualizar(); }
 demoEl.onchange = modo; baseEl.onchange = atualizar;

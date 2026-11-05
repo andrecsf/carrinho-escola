@@ -19,6 +19,7 @@ const api = {
   emprestar: b  => emDemo() ? demo.emprestar(b) : http('POST', ROTAS.emprestar(), b),
   devolver:  b  => emDemo() ? demo.devolver(b)  : http('PATCH', ROTAS.devolver(b.id), {condicao:b.condicao, observacao:b.observacao}),
   liberar:   p  => emDemo() ? demo.liberar(p)   : http('PATCH', ROTAS.liberar(p)),
+  excluir:   p  => emDemo() ? demo.excluir(p)   : http('DELETE', ROTAS.excluir(p)),
   atrasados: async () => emDemo() ? demo.atrasados() : ((await http('GET', ROTAS.atrasados())).atrasados || []),
   historico: () => emDemo() ? demo.historico() : http('GET', ROTAS.historico())
 };

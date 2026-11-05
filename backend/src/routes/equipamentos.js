@@ -61,6 +61,42 @@ router.get('/equipamentos', async (req, res) => {
 
 
 // ==========================================
+// Excluir equipamento
+// Regra: não exclui equipamento emprestado nem equipamento com histórico de
+// empréstimos (a chave estrangeira protege o histórico).
+// ==========================================
+router.delete('/equipamentos/:patrimonio', async (req, res) => {
+  const { patrimonio } = req.params;
+
+  try {
+    const result = await pool.query(
+      `DELETE FROM equipamentos
+       WHERE patrimonio = $1 AND estado <> 'emprestado'
+       RETURNING patrimonio, tipo`,
+      [patrimonio]
+    );
+
+    if (result.rowCount === 0) {
+      const existe = await pool.query('SELECT estado FROM equipamentos WHERE patrimonio = $1', [patrimonio]);
+      if (existe.rowCount === 0) {
+        return res.status(404).json({ erro: 'Equipamento não encontrado.' });
+      }
+      return res.status(409).json({ erro: 'Equipamento emprestado não pode ser excluído. Registre a devolução primeiro.' });
+    }
+
+    return res.status(200).json({ mensagem: 'Equipamento excluído com sucesso.', equipamento: result.rows[0] });
+  } catch (err) {
+    // 23503 = foreign_key_violation: o equipamento tem histórico de empréstimos
+    if (err.code === '23503') {
+      return res.status(409).json({ erro: 'Equipamento possui histórico de empréstimos e não pode ser excluído.' });
+    }
+    console.error(err);
+    return res.status(500).json({ erro: 'Erro interno no servidor.' });
+  }
+});
+
+
+// ==========================================
 // RF4: Liberar da Manutenção (#7)
 // ==========================================
 router.patch('/equipamentos/:patrimonio/liberar', async (req, res) => {

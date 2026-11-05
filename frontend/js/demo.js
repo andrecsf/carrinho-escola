@@ -53,6 +53,13 @@ const demo = {
     if(!e) throw new Error('Equipamento não encontrado ou não está em manutenção');
     e.estado = 'disponivel'; gravarDemo(d);
   },
+  async excluir(p){
+    const d = lerDemo(), e = d.equipamentos.find(x => x.patrimonio===p);
+    if(!e) throw new Error('Equipamento não encontrado.');
+    if(e.estado==='emprestado') throw new Error('Equipamento emprestado não pode ser excluído. Registre a devolução primeiro.');
+    if(d.emprestimos.some(x => x.patrimonio===p)) throw new Error('Equipamento possui histórico de empréstimos e não pode ser excluído.');
+    d.equipamentos = d.equipamentos.filter(x => x.patrimonio!==p); gravarDemo(d);
+  },
   async atrasados(){ return lerDemo().emprestimos.filter(x => !x.devolvido_em && new Date(x.previsto_para) < new Date()); },
   async historico(){ return lerDemo().emprestimos.slice().reverse(); }
 };

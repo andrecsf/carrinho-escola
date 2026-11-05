@@ -34,6 +34,7 @@ Se o navegador bloquear as chamadas (CORS), habilite o pacote `cors` no backend.
 | Cadastrar | `POST /api/equipamentos` |
 | Emprestar | `POST /api/emprestimos` |
 | Devolver | `PATCH /api/emprestimos/:id/devolver` |
+| Excluir equipamento | `DELETE /api/equipamentos/:patrimonio` |
 | Liberar da manutenção | `PATCH /api/equipamentos/:patrimonio/liberar` |
 | Atrasados | `GET /api/emprestimos/atrasados` |
 | Histórico* | `GET /api/historico` |
