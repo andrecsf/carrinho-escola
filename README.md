@@ -2,7 +2,7 @@
 
 Sistema web para controlar o carrinho de equipamentos da escola (notebooks, projetores e câmeras): onde está cada item, com quem e em que estado.
 
-**Integrantes:** _preencher_
+**Integrantes:** André Salgado, Caio Victor, Camila Pessoa, Leticia Gabrielle, Luciana Borges, Priscila Barbosa
 
 ---
 
