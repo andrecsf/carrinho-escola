@@ -6,6 +6,15 @@ Sistema web para controlar o carrinho de equipamentos da escola (notebooks, proj
 
 ---
 
+## Links do projeto
+
+| Link | O que é |
+|---|---|
+| [Carrinho de Notebooks](https://app-cloud-g04-carrinho-ehhwfnfybufccufk.southafricanorth-01.azurewebsites.net/?classId=8a846078-931b-418c-bb0a-fad9ea4f6665&assignmentId=853292d6-aea3-4893-b645-7e7fd250f4ef&submissionId=ae737d66-25f4-6014-7d3c-ba13a4d70bd1) | Sistema em nuvem (publicado na Azure) |
+| [Funções de cada integrante](https://docs.google.com/document/d/19NV3XJiYtcmM1XCpQV8GiIhc1nXDm1i_RoH_JhGSwhU/edit?usp=sharing) | Tabela com a função de cada integrante do grupo |
+
+---
+
 ## 1. Problema e usuário
 
 Os equipamentos do carrinho voltam danificados sem nenhum registro, e um projetor quebrado acaba sendo emprestado de novo na aula seguinte. O usuário é o **técnico responsável pelo carrinho**, que precisa saber onde está cada patrimônio, com quem e em que condição. O sistema impede emprestar equipamento avariado: ao devolver com defeito, o item vai para manutenção e só volta ao uso quando o técnico o libera.
@@ -30,7 +39,7 @@ Os equipamentos do carrinho voltam danificados sem nenhum registro, e um projeto
 | Extra | Excluir equipamento (bloqueado se emprestado ou com histórico) | ✅ Implementado | Não pedido na ficha |
 | Extra | Modo demo no front-end (dados no navegador) | ✅ Implementado | Entra sozinho se a API não responder |
 | Opcional | Foto da avaria no Blob Storage | ⛔ Não implementado | Ver próximos passos |
-| Nível C | Plano de implantação na Azure | 📝 Documentado | Seção 5 |
+| Nível C | Plano de implantação na Azure | 📝 Documentado | Seção 5.6 |
 
 ---
 
@@ -203,7 +212,7 @@ curl http://localhost:3000/health
 # esperado: {"status":"ok","banco":"conectado"}
 ```
 
-Abra `http://localhost:3000` no navegador para usar a interface (abas Equipamentos, Emprestar, Devolver, Atrasados e Histórico).
+Abra `http://localhost:3000` no navegador para usar a interface (abas Equipamentos, Emprestar, Devolver, Atrasados e Histórico). A versão em nuvem está nos [Links do projeto](#links-do-projeto).
 
 | Comando (em `backend/`) | O que faz |
 |---|---|
